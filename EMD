@@ -1,0 +1,148 @@
+import numpy
+from PIL import Image
+
+five = []
+cover_pix = []
+cover_hide_pix = []
+get_secrt_message_five = []
+get_secrt_message_two = []
+cover_hide_pix = cover_pix
+
+
+def ten_to_five(a):  # 将十进制转换成5进制，并且用字符串的形式打印出来
+    shang = []
+    yu = []
+    shangshu = 1
+    while (shangshu != 0):
+        shangshu = int(a / 5)
+        yushu = a % 5
+        a = shangshu
+        yu.append(yushu)
+    lenth = len(yu)
+    st = ""
+    for i in range(lenth):
+        aa = str(yu[lenth - i - 1])
+        st = st + aa
+    if len(st) == 1:
+        st = "0" + st
+    return st
+
+
+def two_to_five(secrt_message):
+    lenth = len(secrt_message)
+    yu = int(lenth / 4)
+    for i in range(yu):
+        dd = str(secrt_message[i * 4]) + str(secrt_message[i * 4 + 1]) + str(secrt_message[i * 4 + 2]) + str(
+            secrt_message[i * 4 + 3])
+        dd = int(dd, 2)  # 得到十进制的数,将每4位二进制分成一组，然后转换成10进制
+        dd = ten_to_five(dd)  # 将十进制转换成5进制
+
+        for j in dd:
+            five.append(j)  # 将转换后的5进制放在一个列表当中，方便后面使用
+
+
+def message_hide(img, secrt_message):
+    #在给定的图像中隐藏秘密信息。该函数通过读取图像的像素值并计算相应的f值，
+    # 根据需要隐藏的信息和f值之间的差异，对像素进行调整，并将修改后的像素值存储在列表cover_hide_pix中，
+    # 最后将修改后的像素值重新应用到图像上，保存修改后的图像。
+    img = Image.open(img).convert("L")
+    width = img.width
+    hight = img.height
+    #获取原图像的每个点的像素值，并存入到列表cover_pix中
+    for i in range(hight):
+        for j in range(width):
+            pix = img.getpixel((j, i))
+            cover_pix.append(pix)
+    print("原来图像的像素点：")
+    for ss in range(len_two):
+        print(cover_pix[ss], end=",")
+    print()
+    print("计算得出的f值：")
+    lenth = len(secrt_message)
+    for a in range(lenth):#这里秘密信息有a个，就有a组像素值,
+        f = (cover_pix[a * 2] + 2 * cover_pix[a * 2 + 1]) % 5# 这就是本算法的F提取函数
+        print(f, end=",")
+        #此处就是EMD的算法实现
+        if secrt_message[a] == f:
+            cover_hide_pix[a * 2] = cover_pix[a * 2]
+            cover_hide_pix[a * 2 + 1] = cover_pix[a * 2 + 1]
+        else:
+            r = (secrt_message[a] - f) % 5
+            if r == 1:
+                cover_hide_pix[a * 2] = cover_pix[a * 2] + 1
+            elif r == 2:
+                cover_hide_pix[a * 2 + 1] = cover_pix[a * 2 + 1] + 1
+            elif r == 3:
+                cover_hide_pix[a * 2 + 1] = cover_pix[a * 2 + 1] - 1
+            elif r == 4:
+                cover_hide_pix[a * 2] = cover_pix[a * 2] - 1
+    flag = 0
+    for i in range(hight):
+        for j in range(width):
+            img.putpixel((j, i), cover_hide_pix[flag])
+            flag = flag + 1
+    img.save("./img/hide_secrt.png")
+    print()
+    print("改变后的像素为：")
+    for i in range(len_two):
+        print(cover_hide_pix[i], end=",")
+
+
+def get_secrt_message(secrt_hide):#从修改后的图像中提取隐藏的秘密信息。该函数读取修改后的图像的像素值，并根据像素值计算相应的f值，并将f值存储在列表
+    secrt_hide = Image.open(secrt_hide)
+    width = secrt_hide.width
+    hight = secrt_hide.height
+    for i in range(hight):
+        for j in range(width):
+            cover_hide_pix.append(secrt_hide.getpixel((j, i)))
+    lenth = len(five)
+    for i in range(lenth):
+        f = (cover_hide_pix[i * 2] + 2 * cover_hide_pix[i * 2 + 1]) % 5
+        get_secrt_message_five.append(f)
+
+
+def five_to_two(get_secrt_message_five):
+    #将五进制的秘密消息转换为二进制。该函数将列表get_secrt_message_five中的五进制数转换为十进制数，
+    # 然后根据十进制数的二进制表示提取出原始的二进制秘密信息，并将结果存储在列表get_secrt_message_two中。
+    lenth = int(len(get_secrt_message_five) / 2)
+    for i in range(lenth):
+        message = int(str(get_secrt_message_five[i * 2]) + str(get_secrt_message_five[i * 2 + 1]))
+        message = int(message / 10) * 5 + message % 10
+        aa = bin(message)[2:]
+        lentehs = len(aa)
+        if lentehs == 2:
+            aa = "0" + "0" + aa
+        elif lentehs == 3:
+            aa = "0" + aa
+        elif lentehs == 1:
+            aa = "0" + "0" + "0" + aa
+
+        for j in aa:
+            get_secrt_message_two.append(int(j))
+
+
+if __name__ == '__main__':
+    # 设置要隐藏的二进制密码信息
+    secrt_message = [0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1]
+    len_two = len(secrt_message)
+    print("需要嵌入的2进制信息：", secrt_message)
+    # 将每4位二进制信息转换成一位五进制的信息
+    two_to_five(secrt_message)
+    five = list(map(int, five))#应用 int 函数到 five 列表的每个元素上，以实现从字符串类型到整数类型的转换，并将转换后的结果存储在一个新的列表five中。
+    print("将二进制秘密信息转换成5进制的信息：", five)
+    # 进行信息的隐藏
+    message_hide("./img/img.png", five)
+    print()
+    print("信息隐藏完成.......")
+    # 从修改的图形中进行密码信息的提取
+    get_secrt_message("./img/secrt_hide.png")
+    print()
+    print("信息提取完成........")
+    print("提取出来的5进制秘密信息:", get_secrt_message_five)
+    # 将5进制的秘密消息转换成2进制输出
+    five_to_two(get_secrt_message_five)
+    print("提取出来的2进制秘密信息:", get_secrt_message_two)
+    if get_secrt_message_two == secrt_message:
+        print("嵌入消息和提取消息相同")
+    else:
+        print("嵌入消息和提取消息不相同")
